@@ -151,7 +151,7 @@ malicious_links = [
 
 
 
-def is_similar(word1, word2, max_distance=16):
+def is_similar(word1:str, word2:str, max_distance=16):
     
     distance = Levenshtein.distance(word1, word2)
     return distance <= max_distance
@@ -200,11 +200,8 @@ def MailAddExt1(incont):
             #string-urile sunt exact la fel
         else:
             if(is_similar(mailadd_DB[i], mailadd)):
-               #print("Found similar add - phishing address")
-               #print(f"{mailadd_DB[i]} ", f"{mailadd}")
                 return 1
             else:
-                #nUll=""
                 return 0
 
 
@@ -277,13 +274,9 @@ def CalculateBOW(wordList):
 
 
 
-def ProcessInput():
-    
-    IN = INPUT.get()
-    output_text.delete('1.0', tk.END)
-    
+def ProcessInput(IN:str):
     wordList = ExtractWords(IN)
-    dictionary = CalculateBOW(wordList=wordList)
+    dictionary = CalculateBOW(wordList)
 
     sdct=str(dictionary)
 
@@ -298,11 +291,10 @@ def ProcessInput():
             bwcnt+=1
             outpart = f"{swords[i]}:{occ_val},"
             associated_output += outpart
-    
-    #associated_output = dictionary
 
-    associated_output = associated_output + f" {bwcnt}"
+    associated_output = associated_output + f"{bwcnt}"
     associated_output = associated_output+'}'
+    
     out1 = associated_output
     selm = ""
     xsum = 0
@@ -321,32 +313,33 @@ def ProcessInput():
                     while i < len(out1) and out1[i].isdigit():  
                         occ_nr = occ_nr * 10 + int(out1[i])  
                         i += 1
+                        
                     xsum += occ_nr * weights[ind]  
-                    #print(xsum)
                     nr = int(out1[len(out1)-2])
                     state_val = (xsum / (len(swords)-nr))
-                    #print(state_val)
 
 
                     phm_lvl=0 # nivel de mail phishing
-                    if (state_val>0.4): #putem adauga si conditie ca continutul mail-ului sa fie mic.
+                    if (state_val>0.4): 
                         phm_lvl+=2
                     
+                    #Verify email address of sender
                     if (MailAddExt1(IN) or MailAddExt2(IN)):
                         phm_lvl+=4
                         
                     if (MailAddExt1(IN)>1):
                         phm_lvl=phm_lvl-4
 
-                    if (mLinkFinder(IN)!=None):
+                    #Check for possible links 
+                    if (mLinkFinder(IN)!=0):
                         #check for malicious link
-                        #phm_lvl+=1
                         for i in range(len(malicious_links)):
                                        if(is_similar(mLinkFinder(IN),malicious_links[i]) or ("http" in mLinkFinder(IN))):
-                                          phm_lvl+=1
+                                          phm_lvl+=1 
+                                          
 
                     if(phm_lvl==0 or phm_lvl<2):
-                        associated_output="The mail content is marked as an regular mail."
+                        associated_output="The mail content is marked as a regular mail."
                     if(phm_lvl>=2 and phm_lvl<4):
                         associated_output="The mail content is a possible phishing mail."
                     if(phm_lvl>=4):
@@ -358,7 +351,6 @@ def ProcessInput():
             i += 1
 
     
-    #print(associated_output)
     output_text.insert(tk.END, associated_output)
     
     ClearInputText()
@@ -369,6 +361,9 @@ def ProcessInput():
 
 
 def OpenFile():
+    
+    ClearInputText()
+    ClearOutputText()
     
     file_path = filedialog.askopenfilename(title="Select a File", filetypes=(("Text Files", ".txt"), ("All Files", ".*")))
     
@@ -386,68 +381,44 @@ def OpenFile():
         
     IN=strcontent
     
-    #Clear Output text in GUI
-    output_text.delete('1.0', tk.END)
-    
-    wordList = ExtractWords(IN)
-    dictionary = CalculateBOW(wordList=wordList)
-    print(dictionary)
-
-    sdct=str(dictionary)
-
-    data_dict = eval(sdct)
-
-    associated_output = ""
-    for i in range(len(swords)):
-        occ_val = data_dict.get(str(swords[i]), 0)
-        if occ_val != 0:
-            outpart = f"'{swords[i]}' - nr_aparitii: {occ_val} "
-            associated_output += outpart
-    
-    output_text.insert(tk.END, associated_output)
-    
-    ClearInputText()
+    ProcessInput(IN)
 
     
 def ClearInputText():
     #Reset INPUT
     INPUT.set("")
+    
+def ClearOutputText():
+    #Clear Output text in GUI
+    output_text.delete('1.0', tk.END)
 
 
 
 
-
-
-### GUI Setup
+#Setup GUI
 
 GUI = tk.Tk()
 GUI.title("Proiect Python | Byte-Builders - PHISHING MAIL TOOL DETECTION")
-geo = "1400x700"
 
-length = len(geo)
-fn = ""
-sn = ""
 
-i = 0
-while geo[i] != 'x':
-    fn = fn + geo[i]
-    i += 1
-i += 1
+#Set minimum window resolution
+GUI.minsize(1280,720)
 
-while i < length:
-    sn = sn + geo[i]
-    i += 1
+#Set starting window resolution
+GUI.geometry("1400x700")
 
-GUI.geometry(geo)
+#Enable resizing of the window on both axis
+GUI.resizable(True,True)
+
 GUI.configure(bg="#f0f8ff")
 INPUT = tk.StringVar()
 
 frame1 = tk.Frame(GUI, bg="#f0f8ff")
 frame1.pack(pady=20)
-label1 = tk.Label(frame1, text="Phishing Mail Detection Tool", fg="blue", bg="#f0f8ff", font=("Helvetica", 20, "bold"))
+label1 = tk.Label(frame1, text="Phishing Mail Detection Tool", fg="#4682B4", bg="#f0f8ff", font=("Helvetica", 20, "bold"))
 label1.pack()
 
-label2 = tk.Label(GUI, text="By Team Byte-Builders", fg="green", bg="#f0f8ff", font=("Arial", 16, "italic"))
+label2 = tk.Label(GUI, text="By Team Byte-Builders", fg="#4682B4", bg="#f0f8ff", font=("Helvetica", 16))
 label2.place(relx=0.98, rely=0.98, anchor=tk.SE)
 
 input_frame = tk.Frame(GUI, bg="#f0f8ff")
@@ -459,7 +430,7 @@ inlabel.grid(row=0, column=0, padx=10)
 inentry = tk.Entry(input_frame, textvariable=INPUT, font=('Helvetica', 16), width=30, bd=2, relief="solid")
 inentry.grid(row=0, column=1, padx=10)
 
-btn_input = tk.Button(input_frame, text='Enter', font=('Helvetica', 14, 'bold'), bg="#4682B4", fg="white", activebackground="#5A9", activeforeground="white", command=ProcessInput)
+btn_input = tk.Button(input_frame, text='Analyze', font=('Helvetica', 14, 'bold'), bg="#4682B4", fg="white", activebackground="#5A9", activeforeground="white", command=ProcessInput)
 btn_input.grid(row=0, column=2, padx=10)
 
 
@@ -476,7 +447,7 @@ output_label.pack()
 output_text = tk.Text(output_frame, height=5, width=80, font=('Helvetica', 14), bg="#ffffff", bd=2, relief="solid")
 output_text.pack()
 
-hint_label = tk.Label(GUI, text="Introduceți textul de verificat și apăsați Enter.", font=("Helvetica", 12), bg="#f0f8ff", fg="#555")
+hint_label = tk.Label(GUI, text="Enter text (or choose a file) and press Analyze", font=("Helvetica", 12), bg="#f0f8ff", fg="#555")
 hint_label.pack()
 
 GUI.mainloop()
